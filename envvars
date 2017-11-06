@@ -1,0 +1,8 @@
+export DISCORD_TOKEN=""
+export DISCORD_CLIENTID=""
+export DATABASE=""
+export DB_HOST=""
+export DB_USER=""
+export DB_PASSWORD=''
+export DB_PORT=""
+export BUNGIE_API=""
