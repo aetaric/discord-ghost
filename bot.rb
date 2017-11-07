@@ -78,7 +78,10 @@ $bot.command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% 
   modifiers = json["Response"]["2171429505"]['availableQuests'][0]['activity']['modifierHashes']
   hash = json["Response"]["2171429505"]['availableQuests'][0]['activity']['activityHash']
   
-  @lookup = JSON.load(db.execute("select * from DestinyActivityDefinition where id = " + hash.to_s)[0][1])
+  @lookup = JSON.load($sqlite.execute("select * from DestinyActivityDefinition where id = " + hash.to_s)[0][1])
+  if @lookup.nil?
+    @lookup = JSON.load($sqlite.execute("select * from DestinyActivityDefinition where id + 4294967296 = " + hash.to_s)[0][1])
+  end
 
   channel = event.channel
   channel.send_embed do |embed|
