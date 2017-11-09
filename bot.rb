@@ -238,8 +238,9 @@ def news
 end
 
 def quotes
-  quotes = ["\"Why is the right place always so terrifying?\"","\"What is it with mysterious anti-authority types calling me little?\"","\"This is fine. This is fine. This is fine. This is just fine.\"","\"And of course the drills have armed crews.\"","\"You want him alive? Whatever happened to 'Kill them back!'?\"","\"Can't we just stay here with the murderous robots?!\""]
-  return quotes.shuffle.pop + " - Ghost"
+  result = $mysql.query("SELECT quote,source FROM quotes ORDER BY RAND() LIMIT 1;")
+  quote_string = result.entries[0]["quote"] + " -" + result.entries[0]["source"]
+  return quote_string
 end
 
 def get_clanid(server)
