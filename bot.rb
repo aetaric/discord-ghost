@@ -7,9 +7,11 @@ require 'json'
 require 'timers'
 require 'sqlite3'
 require 'mysql2'
+require 'rss'
+require 'open-uri'
 
 $bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!'
-$mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"])
+$mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
 $sqlite = SQLite3::Database.new "./manifest/world_sql_content_ce1aaa244657c301a58058dd93868733.content.sqlite"
 
 $bot.bucket :D2, limit: 3, time_span: 60, delay: 10
@@ -51,6 +53,13 @@ $bot.command(:configure, bucket: :general, rate_limit_message: 'Calm down for %t
       event.send_message "Thank you Guardian! My commands are available via *!commands*."
     end
   end
+end
+
+$bot.command(:newschannel, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+  statement = $mysql.prepare("UPDATE servers SET news_channel=? where sid=?")
+  result = statement.execute(event.channel.id.to_s, event.channel.server.id.to_s)
+
+  event.send_message "Guardian, Once news comes from Bungie, I will post it here."
 end
 
 $bot.command(:claninfo, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
@@ -116,7 +125,6 @@ $bot.command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% mo
   @clan = get_clanid event.channel.server.id
 
   json = bungie_api_request "/Platform/Destiny2/Clan/#{@clan}/WeeklyRewardState/"
-
   
   @crucible = false
   @trials = false
@@ -196,6 +204,39 @@ def bungie_api_request(path)
   return JSON.load(response.body)
 end
 
+def news
+  query = $mysql.query("SELECT news_channel FROM servers;")
+  @channels = []
+  query.each do |r|
+    if !r["news_channel"].nil?
+      @channels.push r["news_channel"]
+    end
+  end
+
+  url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
+  open(url) do |rss|
+    feed = RSS::Parser.parse(rss)
+    feed.items.each do |item|
+      statement = $mysql.prepare("SELECT guid FROM bungie_news WHERE guid=?;")
+      result = statement.execute(item.guid.content)
+      if result.entries.empty?
+        insert_statement = $mysql.prepare("INSERT INTO bungie_news (guid,title,link,description) VALUES (?,?,?,?);")
+        insert_statement.execute(item.guid.content, item.title, item.link, item.description)
+        @channels.each do |channel|
+          $bot.channel(channel).send_embed do |embed|
+            embed.title = item.title
+            embed.description = item.description
+            embed.url = item.link
+            embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+            embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+          end
+        end
+      end
+      sleep 1
+    end
+  end
+end
+
 def quotes
   quotes = ["\"Why is the right place always so terrifying?\"","\"What is it with mysterious anti-authority types calling me little?\"","\"This is fine. This is fine. This is fine. This is just fine.\"","\"And of course the drills have armed crews.\"","\"You want him alive? Whatever happened to 'Kill them back!'?\"","\"Can't we just stay here with the murderous robots?!\""]
   return quotes.shuffle.pop + " - Ghost"
@@ -212,5 +253,5 @@ game
 
 $timers = Timers::Group.new
 timer = $timers.every(60) { game }
+news_timer = $timers.every(60) { news }
 loop { $timers.wait }
-
