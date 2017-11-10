@@ -9,10 +9,18 @@ require 'sqlite3'
 require 'mysql2'
 require 'rss'
 require 'open-uri'
+require 'twitter'
 
 $bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!'
 $mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
 $sqlite = SQLite3::Database.new "./manifest/world_sql_content_ce1aaa244657c301a58058dd93868733.content.sqlite"
+
+$twitter = Twitter::REST::Client.new do |config|
+  config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
+  config.consumer_secret     = ENV["TWITTER_CONSUMER_SECRET"]
+  config.access_token        = ENV["TWITTER_ACCESS_TOKEN"]
+  config.access_token_secret = ENV["TWITTER_ACCESS_SECRET"]
+end
 
 $bot.bucket :D2, limit: 3, time_span: 60, delay: 10
 $bot.bucket :general, limit: 3, time_span: 60, delay: 10
@@ -213,6 +221,27 @@ def news
     end
   end
 
+  tweets = $twitter.user_timeline("bungiehelp")
+  tweets.each do |tweet|
+    statement = $mysql.prepare("SELECT tweet_id FROM bungie_help WHERE tweet_id=?;")
+    result = statement.execute(tweet.id)
+    if result.entries.empty?
+      insert_statement = $mysql.prepare("INSERT INTO bungie_help (tweet_id,text,url) VALUES (?,?,?);")
+      insert_statement.execute(tweet.id, tweet.text, tweet.url.to_s)
+      @channels.each do |channel|
+        $bot.channel(channel).send_embed do |embed|
+          embed.title = tweet.user.name + " (@#{tweet.user.screen_name})"
+          embed.description = tweet.text
+          embed.url = tweet.url.to_s
+          embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: tweet.user.profile_image_url.to_s)
+          embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+          embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+        end
+        sleep 1
+      end
+    end
+  end 
+
   url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
   open(url) do |rss|
     feed = RSS::Parser.parse(rss)
@@ -239,7 +268,7 @@ end
 
 def quotes
   result = $mysql.query("SELECT quote,source FROM quotes ORDER BY RAND() LIMIT 1;")
-  quote_string = result.entries[0]["quote"] + " -" + result.entries[0]["source"]
+  quote_string = result.entries[0]["quote"] + " - " + result.entries[0]["source"]
   return quote_string
 end
 
