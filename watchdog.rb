@@ -23,6 +23,10 @@ Signal.trap("TERM") {
   exit
 }
 
+pidfile = File.open("service.pid",'w')
+pidfile.write Process.pid
+pidfile.flush
+
 config = JSON.load(File.open("./watchdog.json", 'r'))
 threads = []
 $pids = []
