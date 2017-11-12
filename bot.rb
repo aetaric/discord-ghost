@@ -11,7 +11,14 @@ require 'rss'
 require 'open-uri'
 require 'twitter'
 
-$bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!'
+shard = ENV["SHARD"].to_i unless ENV["SHARD"].nil?
+total_shards = ENV["TOTALSHARDS"].to_i unless ENV["TOTALSHARDS"].nil?
+if shard.nil?
+  shard = 0
+  total_shards = 1
+end
+
+$bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!', shard_id: shard, num_shards: total_shards
 $mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
 $sqlite = SQLite3::Database.new "./manifest/world_sql_content_ce1aaa244657c301a58058dd93868733.content.sqlite"
 
@@ -49,6 +56,19 @@ $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %ti
   temp_timers.after(60) { event.message.delete }
   temp_timers.wait
   event.drain
+end
+
+$bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+  channel = event.channel
+  shard_value = (shard + 1).to_s + "/" + total_shards.to_s
+  channel.send_embed do |embed|
+    embed.title = "Ghost"
+    embed.description = "A discord bot for Destiny 2 clans"
+    embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+    embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+    embed.add_field(name: "Servers", value: $bot.servers.count, inline: true)
+    embed.add_field(name: "Shard", value: shard_value, inline: true)
+  end
 end
 
 $bot.command(:configure, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event,guild_id|
