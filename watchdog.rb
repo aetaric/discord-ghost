@@ -30,7 +30,7 @@ $pids = []
 config["shards"].times do |shard|
   # find abstract way to spawn these so we can still kill them safely
   threads << Thread.new do
-    pid = Process.spawn({ "SHARD" => shard.to_s, "TOTALSHARDS" => config["shards"].to_s }, "ruby ../ghost/bot.rb", [:out, :err]=>["logs/log_shard" + shard.to_s, "w"])
+    pid = Process.spawn({ "SHARD" => shard.to_s, "TOTALSHARDS" => config["shards"].to_s }, "ruby bot.rb", [:out, :err]=>["logs/log_shard" + shard.to_s, "w"])
     $pids.push pid
     Process.wait(pid)
   end
