@@ -48,6 +48,7 @@ end
 
 $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
   event.send_temporary_message "```
+!botinfo     - Displays bot statistics and info.
 !nightfall   - Pulls the realtime info about the current nightfall.
 !newschannel - Sets the channel this is run in as your news channel. Any posts from Bungie's blog or @BungieHelp on twitter will be linked in this channel.
 !claninfo    - Pulls the realtime info about your clan.
@@ -68,6 +69,7 @@ $bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %tim
     embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
     embed.add_field(name: "Servers", value: $bot.servers.count, inline: true)
     embed.add_field(name: "Shard", value: shard_value, inline: true)
+    embed.add_field(name: "Support Server", value: "https://discord.gg/8My2HqS", inline: true)
   end
 end
 
@@ -115,7 +117,7 @@ $bot.command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% 
 
   modifiers = json["Response"]["2171429505"]['availableQuests'][0]['activity']['modifierHashes']
   hash = json["Response"]["2171429505"]['availableQuests'][0]['activity']['activityHash']
-  
+
   activity = $sqlite.execute("select * from DestinyActivityDefinition where id = " + hash.to_s)[0]
   if activity.nil?
     activity = $sqlite.execute("select * from DestinyActivityDefinition where id + 4294967296 = " + hash.to_s)[0]
@@ -145,7 +147,7 @@ $bot.command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% 
   end
 end
 
-$bot.command(:server, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+$bot.command(:server, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!', help_available: false) do |event|
   event.send_message event.channel.server.id
 end
 
