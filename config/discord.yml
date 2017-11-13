@@ -1,0 +1,9 @@
+# config/discord.yml
+
+development:
+  token: <%= ENV["DISCORD_TOKEN"] %>
+  client_id: <%= ENV["DISCORD_CLIENT_ID"] %>
+
+production:
+  token: <%= ENV["DISCORD_TOKEN"] %>
+  client_id: <%= ENV["DISCORD_CLIENT_ID"] %>

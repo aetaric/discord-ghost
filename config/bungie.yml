@@ -1,0 +1,9 @@
+# config/bungie.yml
+
+development:
+  api_key: <%= ENV["BUNGIE_API_KEY"] %>
+  endpoint: <%= ENV["BUNGIE_ENDPOINT"] %>
+
+production:
+  api_key: <%= ENV["BUNGIE_API_KEY"] %>
+  endpoint: <%= ENV["BUNGIE_ENDPOINT"] %>

@@ -1,0 +1,21 @@
+default: &default
+  adapter: mysql2
+  encoding: utf8
+  username: ghost
+  pool: 5
+
+local: &local
+  <<: *default
+  host: localhost
+  socket: /tmp/mysql.sock
+
+development:
+  <<: *local
+  database: dghost_dev
+  password: <%= ENV["DB_PASSWORD"] %>
+
+production:
+  <<: *default
+  database: amsterdam
+  host: <%= ENV["DB_HOST"] %>
+  password: <%= ENV["DB_PASSWORD"] %>

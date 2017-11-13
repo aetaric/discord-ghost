@@ -10,6 +10,12 @@ require 'mysql2'
 require 'rss'
 require 'open-uri'
 require 'twitter'
+require 'active_record'
+require 'yaml'
+require 'erb'
+
+$app_env = "development"
+$ghost_logger = Logger.new("log/dg-#{$app_env}.log")
 
 shard = ENV["SHARD"].to_i unless ENV["SHARD"].nil?
 total_shards = ENV["TOTALSHARDS"].to_i unless ENV["TOTALSHARDS"].nil?
@@ -18,7 +24,16 @@ if shard.nil?
   total_shards = 1
 end
 
-$bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!', shard_id: shard, num_shards: total_shards
+DISCORD = YAML.load(ERB.new(File.read("./config/discord.yml")).result)[$app_env]
+$ghost_logger.info(DISCORD)
+
+$bot = Discordrb::Commands::CommandBot.new(
+  token: DISCORD["token"],
+  client_id: DISCORD["client_id"],
+  prefix: '!',
+  shard_id: shard,
+  num_shards: total_shards
+)
 $mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
 $sqlite = SQLite3::Database.new "./manifest/world_sql_content_ce1aaa244657c301a58058dd93868733.content.sqlite"
 
@@ -105,13 +120,14 @@ $bot.command(:claninfo, bucket: :D2, rate_limit_message: 'Calm down for %time% m
     embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
     embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
     embed.add_field(name: "Level", value: @progression["level"], inline: true)
-    embed.add_field(name: "Next Level", value: @progression["progressToNextLevel"].to_s + "/" + @progression["nextLevelAt"].to_s + " (" + (@progression["progressToNextLevel"].to_f / @progression["nextLevelAt"].to_f * 100.0).round(2).to_s + "%)", inline: true)
-    embed.add_field(name: "Weekly Progress", value: @progression["weeklyProgress"].to_s + "/" + @progression["weeklyLimit"].to_s + " (" + (@progression["weeklyProgress"].to_f / @progression["weeklyLimit"].to_f * 100.0).round(2).to_s + "%)", inline: true)
+    #embed.add_field(name: "Next Level", value: @progression["progressToNextLevel"].to_s + "/" + @progression["nextLevelAt"].to_s + " (" + (@progression["progressToNextLevel"].to_f / @progression["nextLevelAt"].to_f * 100.0).round(2).to_s + "%)", inline: true)
+    #embed.add_field(name: "Weekly Progress", value: @progression["weeklyProgress"].to_s + "/" + @progression["weeklyLimit"].to_s + " (" + (@progression["weeklyProgress"].to_f / @progression["weeklyLimit"].to_f * 100.0).round(2).to_s + "%)", inline: true)
   end
 end
 
 $bot.command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
-  json = bungie_api_request "/Platform/Destiny2/Milestones/"
+  #json = bungie_api_request "/Platform/Destiny2/Milestones/"
+  json = Lib::BungieAPI.get_nightfall
 
   modifiers = json["Response"]["2171429505"]['availableQuests'][0]['activity']['modifierHashes']
   hash = json["Response"]["2171429505"]['availableQuests'][0]['activity']['activityHash']
