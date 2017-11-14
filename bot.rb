@@ -39,11 +39,16 @@ def game
 end
 
 $bot.server_create do |event|
-   server_owner = event.server.owner
-   server_owner.dm "Thanks for adding me Guardian, but I won't function until I am configured!"
-   server_owner.dm "I require only a few moments of your time to complete this important step."
-   server_owner.dm "Please take a moment to run the !configure *guild id* command in a text channel on your server."
-   server_owner.dm "*Example:* !configure 123456"
+  default_channel = event.server.default_channel
+  default_channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!"
+  default_channel.send_message "I require only a few moments of your time to complete this important step."
+  default_channel.send_message "Please take a moment to run the !configure *guild id* command in a text channel on your server."
+  default_channel.send_message "*Example:* !configure 123456"
+end
+
+$bot.server_delete do |event|
+  statement = $mysql.prepare("DELETE FROM servers WHERE sid=? LIMIT 1")
+  statement.execute(event.server.id)
 end
 
 $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
