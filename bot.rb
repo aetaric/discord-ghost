@@ -79,23 +79,31 @@ $bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %tim
 end
 
 $bot.command(:configure, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event,guild_id|
-  if guild_id.nil?
-    event.send_message "Guardian, I need the guild ID. Please provide it as an arguement to the command."
-  else
-    if guild_id.to_i
-      statement = $mysql.prepare("INSERT INTO servers (sid,d2_guild_id,created_at,updated_at) VALUES (?, ?,NOW(),NOW())")
-      result = statement.execute(event.channel.server.id.to_s,guild_id)
+  if event.author.defined_permission(:administrator)
+    if guild_id.nil?
+      event.send_message "Guardian, I need the guild ID. Please provide it as an arguement to the command."
+    else
+      if guild_id.to_i
+        statement = $mysql.prepare("INSERT INTO servers (sid,d2_guild_id,created_at,updated_at) VALUES (?, ?,NOW(),NOW())")
+        result = statement.execute(event.channel.server.id.to_s,guild_id)
 
-      event.send_message "Thank you Guardian! My commands are available via *!commands*."
+        event.send_message "Thank you Guardian! My commands are available via *!commands*."
+      end
     end
+  else
+    event.send_message "Guardian, You need permission from the vanguard to do this! (User lacks defined role with \"Administrator\" set)"
   end
 end
 
 $bot.command(:newschannel, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
-  statement = $mysql.prepare("UPDATE servers SET news_channel=? where sid=?")
-  result = statement.execute(event.channel.id.to_s, event.channel.server.id.to_s)
+  if event.author.defined_permission(:administrator)
+    statement = $mysql.prepare("UPDATE servers SET news_channel=? where sid=?")
+    result = statement.execute(event.channel.id.to_s, event.channel.server.id.to_s)
 
-  event.send_message "Guardian, Once news comes from Bungie, I will post it here."
+    event.send_message "Guardian, Once news comes from Bungie, I will post it here."
+  else
+    event.send_message "Guardian, You need permission from the vanguard to do this! (User lacks defined role with \"Administrator\" set)"
+  end
 end
 
 $bot.command(:claninfo, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
