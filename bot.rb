@@ -5,7 +5,6 @@ require 'net/http'
 require 'uri'
 require 'json'
 require 'timers'
-require 'sqlite3'
 require 'mysql2'
 require 'rss'
 require 'open-uri'
@@ -20,7 +19,6 @@ end
 
 $bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!', shard_id: shard, num_shards: total_shards
 $mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
-$sqlite = SQLite3::Database.new "./manifest/world_sql_content_ce1aaa244657c301a58058dd93868733.content.sqlite"
 
 $twitter = Twitter::REST::Client.new do |config|
   config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -131,31 +129,19 @@ $bot.command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% 
   modifiers = json["Response"]["2171429505"]['availableQuests'][0]['activity']['modifierHashes']
   hash = json["Response"]["2171429505"]['availableQuests'][0]['activity']['activityHash']
 
-  activity = $sqlite.execute("select * from DestinyActivityDefinition where id = " + hash.to_s)[0]
-  if activity.nil?
-    activity = $sqlite.execute("select * from DestinyActivityDefinition where id + 4294967296 = " + hash.to_s)[0]
-  end
-
-  @lookup = JSON.load(activity[1])
+  @lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityDefinition/#{hash}/"
 
   channel = event.channel
   channel.send_embed do |embed|
-    embed.title = @lookup["displayProperties"]["name"]
-    embed.description = @lookup["displayProperties"]["description"]
-    embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["pgcrImage"])
-    embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["displayProperties"]["icon"])
+    embed.title = @lookup["Response"]["displayProperties"]["name"]
+    embed.description = @lookup["Response"]["displayProperties"]["description"]
+    embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["Response"]["pgcrImage"])
+    embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["Response"]["displayProperties"]["icon"])
     embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
     embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
     modifiers.each do |mod|
-      mod_lookup = $sqlite.execute("select * from DestinyActivityModifierDefinition where id = " + mod.to_s)[0]
-      if !mod_lookup.nil?
-        mod_info = JSON.load(mod_lookup[1])
-        embed.add_field(name: mod_info["displayProperties"]["name"], value: mod_info["displayProperties"]["description"], inline: true)
-      else
-        mod_lookup = $sqlite.execute("select * from DestinyActivityModifierDefinition where id + 4294967296 = " + mod.to_s)[0]
-        mod_info = JSON.load(mod_lookup[1])
-        embed.add_field(name: mod_info["displayProperties"]["name"], value: mod_info["displayProperties"]["description"], inline: true)
-      end
+      mod_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityModifierDefinition/#{mod.to_s}/"
+      embed.add_field(name: mod_info["Response"]["displayProperties"]["name"], value: mod_info["Response"]["displayProperties"]["description"], inline: true)
     end
   end
 end
@@ -196,38 +182,38 @@ $bot.command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% mo
   end
   
   hash = json['Response']['milestoneHash']
-  @lookup = JSON.load($sqlite.execute("select * from DestinyMilestoneDefinition where id + 4294967296 = " + hash.to_s)[0][1])
+  @lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyMilestoneDefinition/#{hash.to_s}/"
   
   channel = event.channel
   channel.send_embed do |embed|
-    embed.title = @lookup["displayProperties"]["name"]
-    embed.description = @lookup["displayProperties"]["description"]
-    embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["displayProperties"]["icon"])
+    embed.title = @lookup["Response"]["displayProperties"]["name"]
+    embed.description = @lookup["Response"]["displayProperties"]["description"]
+    embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup["Response"]["displayProperties"]["icon"])
     embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
     embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
     # 3789021730 - Nightfall
     if @nightfall
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["3789021730"]["displayProperties"]["name"], value: "Available", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["3789021730"]["displayProperties"]["name"], value: "Available", inline: true)
     else
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["3789021730"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["3789021730"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
     end
     # 2112637710 - Trials
     if @trials
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["2112637710"]["displayProperties"]["name"], value: "Available", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["2112637710"]["displayProperties"]["name"], value: "Available", inline: true)
     else
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["2112637710"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["2112637710"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
     end
     # 2043403989 - Raid
     if @raid
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["2043403989"]["displayProperties"]["name"], value: "Available", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["2043403989"]["displayProperties"]["name"], value: "Available", inline: true)
     else
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["2043403989"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["2043403989"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
     end
     # 964120289 - Crucible
     if @crucible
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["964120289"]["displayProperties"]["name"], value: "Available", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["964120289"]["displayProperties"]["name"], value: "Available", inline: true)
     else
-      embed.add_field(name: @lookup["rewards"]["1064137897"]["rewardEntries"]["964120289"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
+      embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["964120289"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
     end
   end
 end
