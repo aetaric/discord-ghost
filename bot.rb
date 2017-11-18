@@ -38,10 +38,10 @@ end
 
 $bot.server_create do |event|
   default_channel = event.server.default_channel
-  default_channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!"
-  default_channel.send_message "I require only a few moments of your time to complete this important step."
-  default_channel.send_message "Please take a moment to run the !configure *guild id* command in a text channel on your server."
-  default_channel.send_message "*Example:* !configure 123456"
+  default_channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!\n
+I require only a few moments of your time to complete this important step.\n
+Please take a moment to run the !configure *guild id* command in a text channel on your server.\n
+*Example:* !configure 123456"
 end
 
 $bot.server_delete do |event|
