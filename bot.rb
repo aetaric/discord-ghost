@@ -77,7 +77,7 @@ $bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %tim
 end
 
 $bot.command(:configure, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event,guild_id|
-  if event.author.defined_permission(:administrator)
+  if event.author.defined_permission?(:administrator)
     if guild_id.nil?
       event.send_message "Guardian, I need the guild ID. Please provide it as an arguement to the command."
     else
@@ -94,7 +94,7 @@ $bot.command(:configure, bucket: :general, rate_limit_message: 'Calm down for %t
 end
 
 $bot.command(:newschannel, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
-  if event.author.defined_permission(:administrator)
+  if event.author.defined_permission?(:administrator)
     statement = $mysql.prepare("UPDATE servers SET news_channel=? where sid=?")
     result = statement.execute(event.channel.id.to_s, event.channel.server.id.to_s)
 
