@@ -45,18 +45,24 @@ def game
 end
 
 $bot.server_create do |event|
-  default_channel = event.server.default_channel
-  default_channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!\n
+  puts "Ghost was added to server: #{event.server.name} (#{event.server.id})"
+  bot_member = $bot.profile.on(event.server)
+  event.server.channels.each do |channel|
+    if bot_member.permission?(:send_messages, channel)
+      channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!\n
 I require only a few moments of your time to complete this important step.\n
 Please take a moment to run the !configure *guild id* command in a text channel on your server.\n
 *Example:* !configure 123456"
-  #$graphite.increment("ghost.servers.shard.#{shard}") unless $graphite.nil?
+      break
+    else
+      puts "No permission in channel: #{channel.name}"
+    end
+  end
 end
 
 $bot.server_delete do |event|
   statement = $mysql.prepare("DELETE FROM servers WHERE sid=? LIMIT 1")
   statement.execute(event.server.id)
-  #$graphite.increment("ghost.servers.shard.#{shard}", by: -1) unless $graphite.nil?
 end
 
 $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
