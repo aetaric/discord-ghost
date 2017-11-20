@@ -9,6 +9,8 @@ require 'mysql2'
 require 'rss'
 require 'open-uri'
 require 'twitter'
+require 'graphite-api'
+require 'graphite-api/core_ext/numeric'
 
 shard = ENV["SHARD"].to_i unless ENV["SHARD"].nil?
 total_shards = ENV["TOTALSHARDS"].to_i unless ENV["TOTALSHARDS"].nil?
@@ -19,6 +21,12 @@ end
 
 $bot = Discordrb::Commands::CommandBot.new token: ENV["DISCORD_TOKEN"], client_id: ENV["DISCORD_CLIENTID"], prefix: '!', shard_id: shard, num_shards: total_shards
 $mysql = Mysql2::Client.new( :host => ENV["DB_HOST"], :username => ENV["DB_USER"], :password => ENV["DB_PASSWORD"], :port => ENV["DB_PORT"], :database => ENV["DATABASE"], :reconnect => true)
+
+begin
+  $graphite = GraphiteAPI.new( graphite: ENV["GRAPHITE_HOST"] )
+rescue StandardError => e
+  $graphite = nil
+end
 
 $twitter = Twitter::REST::Client.new do |config|
   config.consumer_key        = ENV["TWITTER_CONSUMER_KEY"]
@@ -42,11 +50,13 @@ $bot.server_create do |event|
 I require only a few moments of your time to complete this important step.\n
 Please take a moment to run the !configure *guild id* command in a text channel on your server.\n
 *Example:* !configure 123456"
+  #$graphite.increment("ghost.servers.shard.#{shard}") unless $graphite.nil?
 end
 
 $bot.server_delete do |event|
   statement = $mysql.prepare("DELETE FROM servers WHERE sid=? LIMIT 1")
   statement.execute(event.server.id)
+  #$graphite.increment("ghost.servers.shard.#{shard}", by: -1) unless $graphite.nil?
 end
 
 $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
@@ -300,10 +310,16 @@ def get_clanid(server)
   return result.first["d2_guild_id"]
 end
 
+def graphite(shard)
+  $graphite.metrics("ghost.servers.shard.#{shard}" => $bot.servers.count) unless $graphite.nil?
+end
+
 $bot.run :async
-game
+$bot.ready { game }
 
 $timers = Timers::Group.new
 timer = $timers.every(60) { game }
 news_timer = $timers.every(60) { news }
+graphtie_timer = $timers.every(60) { graphite(shard) }
 loop { $timers.wait }
+
