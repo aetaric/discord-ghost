@@ -334,6 +334,26 @@ def graphite(shard)
   $graphite.metrics("ghost.servers.shard.#{shard}" => $bot.servers.count) unless $graphite.nil?
 end
 
+def discordbots(shard, total_shards)
+  body = {}
+  body["server_count"] = $bot.servers
+  body["shard_id"] = shard
+  body["shard_count"] = total_shards
+
+  uri = URI.parse("https://discordbots.org/api/bots/#{$bot.profile.id}/stats")
+  request = Net::HTTP::Post.new(uri)
+  request["Authorization"] = "#{dbl_token}"
+  request.body = JSON.dump(body)
+
+  req_options = {
+    use_ssl: uri.scheme == "https",
+  }
+
+  response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+    http.request(request)
+  end
+end
+
 $bot.run :async
 $bot.ready { game }
 
@@ -341,5 +361,6 @@ $timers = Timers::Group.new
 timer = $timers.every(60) { game }
 news_timer = $timers.every(60) { news }
 graphtie_timer = $timers.every(60) { graphite(shard) }
+discordbots_timer = $timers.every(120) { discord_bots(shard, total_shards) }
 loop { $timers.wait }
 
