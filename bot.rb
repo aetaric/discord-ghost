@@ -361,6 +361,6 @@ $timers = Timers::Group.new
 timer = $timers.every(60) { game }
 news_timer = $timers.every(60) { news }
 graphtie_timer = $timers.every(60) { graphite(shard) }
-discordbots_timer = $timers.every(120) { discord_bots(shard, total_shards, ENV["DBL_TOKEN"]) }
+discordbots_timer = $timers.every(120) { discordbots(shard, total_shards, ENV["DBL_TOKEN"]) }
 loop { $timers.wait }
 
