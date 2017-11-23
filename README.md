@@ -1,5 +1,6 @@
 # Discord-Ghost
 Discord bot using discordrb for Destiny2 clans
+
 [![Discord Bots](https://discordbots.org/api/widget/status/375790373131386891.png)](https://discordbots.org/bot/375790373131386891)
 
 ## Authorize the bot on your server
