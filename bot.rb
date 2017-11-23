@@ -334,7 +334,7 @@ def graphite(shard)
   $graphite.metrics("ghost.servers.shard.#{shard}" => $bot.servers.count) unless $graphite.nil?
 end
 
-def discordbots(shard, total_shards)
+def discordbots(shard, total_shards, dbl_token)
   body = {}
   body["server_count"] = $bot.servers
   body["shard_id"] = shard
@@ -361,6 +361,6 @@ $timers = Timers::Group.new
 timer = $timers.every(60) { game }
 news_timer = $timers.every(60) { news }
 graphtie_timer = $timers.every(60) { graphite(shard) }
-discordbots_timer = $timers.every(120) { discord_bots(shard, total_shards) }
+discordbots_timer = $timers.every(120) { discord_bots(shard, total_shards, ENV["DBL_TOKEN"]) }
 loop { $timers.wait }
 
