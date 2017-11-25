@@ -78,6 +78,15 @@ $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %ti
   event.drain
 end
 
+$bot.command(:eval, help_available: false) do |event, *code|
+   break unless event.user.id == 188105444365959170
+   begin
+     eval code.join(' ')
+   rescue => e
+     "An error occurred 😞 ```#{e}```"
+   end
+end
+
 $bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
   shard_value = (shard + 1).to_s + "/" + total_shards.to_s
   seconds = `ps -o etimes= -p '#{Process.pid}'`.strip.to_i
