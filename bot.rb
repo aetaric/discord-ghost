@@ -68,6 +68,7 @@ end
 $bot.command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
   event.send_temporary_message "```
 !botinfo     - Displays bot statistics and info.
+!item        - Searches for the item passed after the command.
 !nightfall   - Pulls the realtime info about the current nightfall.
 !newschannel - Sets the channel this is run in as your news channel. Any posts from Bungie's blog or @BungieHelp on twitter will be linked in this channel.
 !claninfo    - Pulls the realtime info about your clan.
@@ -245,6 +246,64 @@ $bot.command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% mo
     else
       embed.add_field(name: @lookup["Response"]["rewards"]["1064137897"]["rewardEntries"]["964120289"]["displayProperties"]["name"], value: "Not Obtained", inline: true)
     end
+  end
+end
+
+$bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event,*search_term|
+  if search_term.nil?
+    event.send_message "Guardian, You need to tell me what you are looking for. try:\n !item Lincoln Green"
+    break
+  end
+  if search_term.join("%20").length < 3
+    event.send_message "Guardian, I need 3 or more letters to search the archives."
+    break
+  end
+
+  search = search_term.join("%20")
+  search_response = bungie_api_request "/Platform/Destiny2/Armory/Search/DestinyInventoryItemDefinition/#{search}/"
+  if search_response["Response"]["results"]["totalResults"] == 0
+    event.send_message "Guardian, I couldn't find an item with that name."
+    break
+  elsif search_response["Response"]["results"]["totalResults"] > 1
+    results = []
+    search_response["Response"]["results"]["results"].each do |result|
+      results.push result["displayProperties"]["name"]
+    end
+    event.send_message "Guardian, I found the following results for that search. Please try again with one of the items below.\nIf this item is uncommon or rare, I might not be able to pull the specific one you want.\n#{results.join("\n")}"
+    break
+  end
+
+  item_hash = search_response["Response"]["results"]["results"][0]["hash"]
+  item_response = bungie_api_request "/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{item_hash}/"
+
+  event.channel.send_embed do |embed|
+    embed.title = item_response["Response"]["displayProperties"]["name"]
+    embed.description = item_response["Response"]["displayProperties"]["description"]
+    embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + item_response["Response"]["displayProperties"]["icon"])
+    embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + item_response["Response"]["screenshot"])
+    embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+    embed.color = Discordrb::ColourRGB.new(color_map(item_response["Response"]["inventory"]["tierType"])).combined
+    embed.add_field(name: "Type", value: item_response["Response"]["itemTypeDisplayName"], inline: true)
+    embed.add_field(name: "Tier", value: item_response["Response"]["inventory"]["tierTypeName"], inline: true)
+  end
+end
+
+def color_map(tier)
+  case tier
+  when 1
+    return 0x000000
+  when 2
+    return 0xc3bcb4
+  when 3
+    return 0x306c39
+  when 4
+    return 0x5076a3
+  when 5
+    return 0x542f65
+  when 6
+    return 0xceae33
+  else 
+    return 0x36393e
   end
 end
 

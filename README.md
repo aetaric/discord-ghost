@@ -12,3 +12,4 @@ https://discordapp.com/oauth2/authorize?client_id=375790373131386891&scope=bot&p
  * !engrams - Displays your clan's engram status.
  * !nightfall - pulls the modifiers for the nightfall
  * !claninfo - Displays info about your clan (level and xp progress)
+ * !item {search_term} - Searches for the requested item in the Destiny 2 API.
