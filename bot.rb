@@ -276,6 +276,16 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
   item_hash = search_response["Response"]["results"]["results"][0]["hash"]
   item_response = bungie_api_request "/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{item_hash}/"
 
+  if item_response["Response"]["itemType"] == 2
+    # Armor
+  elsif item_response["Response"]["itemType"] == 3
+    # weapon
+  else
+    # something else
+    event.send_message "Guardian, That looks to be something other than a weapon or armor..."
+    break
+  end
+
   event.channel.send_embed do |embed|
     embed.title = item_response["Response"]["displayProperties"]["name"]
     embed.description = item_response["Response"]["displayProperties"]["description"]
@@ -287,6 +297,26 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
     embed.add_field(name: "Tier", value: item_response["Response"]["inventory"]["tierTypeName"], inline: true)
     if !class_map(item_response["Response"]["quality"]["infusionCategoryName"]).nil?
       embed.add_field(name: "Class", value: class_map(item_response["Response"]["quality"]["infusionCategoryName"]), inline: true)
+    end
+
+    if !item_response["Response"]["sockets"]["socketEntries"].nil?
+      item_response["Response"]["sockets"]["socketEntries"].each do |socket|
+        if !socket["reusablePlugItems"].empty?
+          name = ""
+          description = ""
+          socket["reusablePlugItems"].each_with_index do |plug,index|
+            plug_response = bungie_api_request "/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{plug['plugItemHash']}/"
+            name += plug_response["Response"]["displayProperties"]["name"]
+            description += plug_response["Response"]["displayProperties"]["description"]
+            if (index + 1) != socket["reusablePlugItems"].length
+              name += " | "
+              description += " \n\n"
+            end
+          end
+
+          embed.add_field(name: name, value: description, inline: true)
+        end
+      end
     end
   end
 end
