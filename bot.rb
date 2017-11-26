@@ -285,6 +285,22 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
     embed.color = Discordrb::ColourRGB.new(color_map(item_response["Response"]["inventory"]["tierType"])).combined
     embed.add_field(name: "Type", value: item_response["Response"]["itemTypeDisplayName"], inline: true)
     embed.add_field(name: "Tier", value: item_response["Response"]["inventory"]["tierTypeName"], inline: true)
+    if !class_map(item_response["Response"]["quality"]["infusionCategoryName"]).nil?
+      embed.add_field(name: "Class", value: class_map(item_response["Response"]["quality"]["infusionCategoryName"]), inline: true)
+    end
+  end
+end
+
+def class_map(class_text)
+  case class_text
+  when /warlock/
+    return "Warlock"
+  when /titan/
+    return "Titan"
+  when /hunter/
+    return "Hunter"
+  else
+    return nil
   end
 end
 
