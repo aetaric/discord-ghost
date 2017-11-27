@@ -259,32 +259,30 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
     break
   end
 
-  search = search_term.join("%20")
-  search_response = bungie_api_request "/Platform/Destiny2/Armory/Search/DestinyInventoryItemDefinition/#{search}/"
-  if search_response["Response"]["results"]["totalResults"] == 0
-    event.send_message "Guardian, I couldn't find an item with that name."
-    break
-  elsif search_response["Response"]["results"]["totalResults"] > 1
-    results = []
-    search_response["Response"]["results"]["results"].each do |result|
-      results.push result["displayProperties"]["name"]
+  item_hash = nil
+
+  if search_term[(search_term.length - 1)] =~ /\A\d+\z/ ? true : false
+    item_hash = search_term.pop
+  end
+  if item_hash.nil?
+    search = search_term.join("%20")
+    search_response = bungie_api_request "/Platform/Destiny2/Armory/Search/DestinyInventoryItemDefinition/#{search}/"
+    if search_response["Response"]["results"]["totalResults"] == 0
+      event.send_message "Guardian, I couldn't find an item with that name."
+      break
+    elsif search_response["Response"]["results"]["totalResults"] > 1
+      results = []
+      search_response["Response"]["results"]["results"].each do |result|
+        results.push result["displayProperties"]["name"] + " " + result["hash"].to_s
+      end
+      event.send_message "Guardian, I found the following results for that search. Please try again with one of the items below.\n#{results.join("\n")}"
+      break
     end
-    event.send_message "Guardian, I found the following results for that search. Please try again with one of the items below.\nIf this item is uncommon or rare, I might not be able to pull the specific one you want.\n#{results.join("\n")}"
-    break
-  end
 
-  item_hash = search_response["Response"]["results"]["results"][0]["hash"]
+    item_hash = search_response["Response"]["results"]["results"][0]["hash"]
+  end
+  
   item_response = bungie_api_request "/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{item_hash}/"
-
-  if item_response["Response"]["itemType"] == 2
-    # Armor
-  elsif item_response["Response"]["itemType"] == 3
-    # weapon
-  else
-    # something else
-    event.send_message "Guardian, That looks to be something other than a weapon or armor..."
-    break
-  end
 
   event.channel.send_embed do |embed|
     embed.title = item_response["Response"]["displayProperties"]["name"]
@@ -297,6 +295,25 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
     embed.add_field(name: "Tier", value: item_response["Response"]["inventory"]["tierTypeName"], inline: true)
     if !class_map(item_response["Response"]["quality"]["infusionCategoryName"]).nil?
       embed.add_field(name: "Class", value: class_map(item_response["Response"]["quality"]["infusionCategoryName"]), inline: true)
+    end
+
+    if item_response["Response"]["itemType"] == 2
+      # Armor
+      defense, mobility, resilience, recovery = armor_stats(item_response["Response"]["stats"]["stats"])
+      embed.add_field(name: defense["name"], value: defense["value"], inline: true)
+      embed.add_field(name: mobility["name"], value: mobility["value"], inline: true)
+      embed.add_field(name: resilience["name"], value: resilience["value"], inline: true)
+      embed.add_field(name: recovery["name"], value: recovery["value"], inline: true)
+    elsif item_response["Response"]["itemType"] == 3
+      # weapon
+      stats = weapon_stats(item_response["Response"]["stats"]["stats"])
+      stats.each do |_,value|
+        embed.add_field(name: value["name"], value: value["value"], inline: true)
+      end
+    else
+      # something else
+      event.send_message "Guardian, That looks to be something other than a weapon or armor..."
+      break
     end
 
     if !item_response["Response"]["sockets"]["socketEntries"].nil?
@@ -319,6 +336,158 @@ $bot.command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more 
       end
     end
   end
+end
+
+def armor_stats(stats)
+  defense = {"name" => "Defense"}
+  mobility = {"name" => "Mobility"}
+  resilience = {"name" => "Resilience"}
+  recovery = {"name" => "Recovery"}
+
+  # Defense
+  if !stats["3897883278"].nil?
+    defense["value"] = "#{stats["3897883278"]["minimum"]} - #{stats["3897883278"]["maximum"]}"
+  else
+    defense["value"] = "0"
+  end
+
+  # Mobility
+  if !stats["2996146975"].nil?
+    mobility["value"] = stats["2996146975"]["value"]
+  else
+    mobility["value"] = 0
+  end
+
+  # Resilience
+  if !stats["392767087"].nil?
+    resilience["value"] = stats["392767087"]["value"]
+  else
+    resilience["value"] = 0
+  end
+
+  # Recovery
+  if ! stats["1943323491"].nil?
+    recovery["value"] = stats["1943323491"]["value"]
+  else
+    recovery["value"] = 0
+  end
+
+  return defense, mobility, resilience, recovery
+end
+
+def weapon_stats(stats)
+  wep_stats = {}
+  attack = {"name" => "Attack"}
+  magazine = {"name" => "Magazine"}
+  rpm = {"name" => "RPM"}
+  charge_time = {"name" => "Charge Time"}
+  blast_radius = {"name" => "Blast Radius"}
+  aim_assist = {"name" => "Aim Assist"}
+
+  impact = {"name" => "Impact"}
+  range = {"name" => "Range"}
+  stability = {"name" => "Stability"}
+  reload_speed = {"name" => "Reload Speed"}
+  handling = {"name" => "Handling"}
+  velocity = {"name" => "Velocity"}
+  
+  # Attack
+  if !stats["1480404414"].nil?
+    attack["value"] = "#{stats["1480404414"]["minimum"]} - #{stats["1480404414"]["maximum"]}"
+    wep_stats["attack"] = attack
+  else
+    attack["value"] = 0
+  end
+
+  # Magazine
+  if !stats["3871231066"].nil?
+    magazine["value"] = "#{stats["3871231066"]["value"]}"
+    wep_stats["magazine"] = magazine
+  else
+    magazine["value"] = 0
+  end
+
+  # RPM
+  if !stats["4284893193"].nil?
+    rpm["value"] = "#{stats["4284893193"]["value"]}"
+    wep_stats["rpm"] = rpm
+  else
+    rpm["value"] = 0
+  end
+
+  # Charge Time
+  if !stats["2961396640"].nil?
+    charge_time["value"] = "#{stats["2961396640"]["value"]}"
+    wep_stats["charge_time"] = charge_time
+  else
+    charge_time["value"] = 0
+  end
+
+  # Blast Radius
+  if !stats["3614673599"].nil?
+    blast_radius["value"] = "#{stats["3614673599"]["value"]}"
+    wep_stats["blast_radius"] = blast_radius
+  else
+    blast_radius["value"] = 0
+  end
+
+  # Aim Assist
+  if !stats["1345609583"].nil?
+    aim_assist["value"] = "#{stats["1345609583"]["value"]}"
+    wep_stats["aim_assist"] = aim_assist
+  else
+    aim_assist["value"] = 0
+  end
+
+  # Impact
+  if !stats["4043523819"].nil?
+    impact["value"] = "#{stats["4043523819"]["value"]}"
+    wep_stats["impact"] = impact
+  else
+    impact["value"] = 0
+  end
+
+  # Range
+  if !stats["1240592695"].nil?
+    range["value"] = "#{stats["1240592695"]["value"]}"
+    wep_stats["range"] = range
+  else
+    range["value"] = 0
+  end
+
+  # Stability
+  if !stats["155624089"].nil?
+    stability["value"] = "#{stats["155624089"]["value"]}"
+    wep_stats["stability"] = stability
+  else
+    stability["value"] = 0
+  end
+
+  # Reload Speed
+  if !stats["4188031367"].nil?
+    reload_speed["value"] = "#{stats["4188031367"]["value"]}"
+    wep_stats["reload_speed"] = reload_speed
+  else
+    reload_speed["value"] = 0
+  end
+
+  # Handling
+  if !stats["943549884"].nil?
+    handling["value"] = "#{stats["943549884"]["value"]}"
+    wep_stats["handling"] = handling
+  else
+    handling["value"] = 0
+  end
+
+  # Velocity
+  if !stats["2523465841"].nil?
+    velocity["value"] = "#{stats["2523465841"]["value"]}"
+    wep_stats["velocity"] = velocity 
+  else
+    velocity["value"] = 0
+  end
+
+  return wep_stats
 end
 
 def class_map(class_text)
