@@ -3,7 +3,7 @@ module Ghost
     module Nightfall
       extend Discordrb::Commands::CommandContainer
 
-      command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+      command(:nightfall, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!', usage: "!nightfall", max_args: 0, description: "Displays the current nightfall and the modifiers") do |event|
         json = bungie_api_request "/Platform/Destiny2/Milestones/"
 
         modifiers = json["Response"]["2171429505"]['availableQuests'][0]['activity']['modifierHashes']

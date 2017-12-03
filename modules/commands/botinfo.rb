@@ -2,7 +2,7 @@ module Ghost
   module DiscordCommands
     module BotInfo
       extend Discordrb::Commands::CommandContainer
-      $bot.command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+      command(:botinfo, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!', description: "Outputs information about the bot and it's running state.") do |event|
         shard_value = ($shard + 1).to_s + "/" + $total_shards.to_s
         seconds = `ps -o etimes= -p '#{Process.pid}'`.strip.to_i
         rev = `git rev-parse HEAD`.strip.split(//).first(9).join("")

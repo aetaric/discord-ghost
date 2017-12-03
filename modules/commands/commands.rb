@@ -3,7 +3,7 @@ module Ghost
     module Commands
       extend Discordrb::Commands::CommandContainer
 
-      command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+      command(:commands, bucket: :general, rate_limit_message: 'Calm down for %time% more seconds!', description: "Lists all the commands and a description.") do |event|
         event.send_temporary_message "```
       !botinfo     - Displays bot statistics and info.
       !item        - Searches for the item passed after the command.

@@ -3,7 +3,7 @@ module Ghost
     module Commands
       extend Discordrb::Commands::CommandContainer
 
-      command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event|
+      command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!', description: "Displays the clan engrams for your configured clan.") do |event|
         @clan = get_clanid event.channel.server.id
     
         json = bungie_api_request "/Platform/Destiny2/Clan/#{@clan}/WeeklyRewardState/"

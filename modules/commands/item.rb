@@ -3,7 +3,9 @@ module Ghost
     module Item
       extend Discordrb::Commands::CommandContainer
 
-      command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!') do |event,*search_term|
+      command(:item, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!', 
+        description: "Searches the Destiny 2 Item database for the requested item. If a perfect match is found, it displays the item, otherwise this returns the list of items it found and an isolator string to ensure you get the one you want.", 
+        usage: "!item Lincoln Green") do |event,*search_term|
         if search_term.nil?
           event.send_message "Guardian, You need to tell me what you are looking for. try:\n !item Lincoln Green"
           break
