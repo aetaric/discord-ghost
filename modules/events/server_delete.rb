@@ -6,6 +6,8 @@ module Ghost
       server_delete do |event|
         statement = $mysql.prepare("DELETE FROM servers WHERE sid=? LIMIT 1")
         statement.execute(event.server.id)
+        statement = $mysql.prepare("DELETE FROM guilds WHERE sid=?")
+        statement.execute(event.server.id)
       end
     end
   end

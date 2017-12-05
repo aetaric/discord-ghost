@@ -49,9 +49,15 @@ module Ghost
     end
     
     def get_clanid(server)
-      statement = $mysql.prepare("SELECT * FROM servers WHERE sid = ?")
+      statement = $mysql.prepare("SELECT * FROM guilds WHERE sid = ?")
       result = statement.execute(server.to_s)
-      return result.first["d2_guild_id"]
+      clans = []
+
+      result.each do |r|
+        clans.push r["d2_guild_id"]
+      end
+
+      return clans
     end
     
     def armor_stats(stats)

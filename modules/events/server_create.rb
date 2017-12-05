@@ -17,6 +17,9 @@ Please take a moment to run the !configure *guild id* command in a text channel 
             puts "No permission in channel: #{channel.name}"
           end
         end
+        statement = $mysql.prepare("INSERT INTO servers (sid,created_at,updated_at) VALUES (?,NOW(),NOW())")
+        result = statement.execute(event.channel.server.id.to_s)
+
       end
     end
   end
