@@ -5,6 +5,10 @@ module Ghost
       
       server_create do |event|
         puts "Ghost was added to server: #{event.server.name} (#{event.server.id})"
+
+        statement = $mysql.prepare("INSERT INTO servers (sid,created_at,updated_at) VALUES (?,NOW(),NOW())")
+        result = statement.execute(event.server.id.to_s)
+
         bot_member = $bot.profile.on(event.server)
         event.server.channels.each do |channel|
           if bot_member.permission?(:send_messages, channel)
@@ -17,9 +21,6 @@ Please take a moment to run the !configure *guild id* command in a text channel 
             puts "No permission in channel: #{channel.name}"
           end
         end
-        statement = $mysql.prepare("INSERT INTO servers (sid,created_at,updated_at) VALUES (?,NOW(),NOW())")
-        result = statement.execute(event.server.id.to_s)
-
       end
     end
   end
