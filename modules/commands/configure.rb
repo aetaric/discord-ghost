@@ -9,11 +9,13 @@ module Ghost
         if guild_id.nil?
           event.send_message "Guardian, I need the guild ID. Please provide it as an arguement to the command."
         else
-          if guild_id.to_i
+          if guild_id.to_i != 0
             statement = $mysql.prepare("INSERT INTO guilds (sid,d2_guild_id) VALUES (?, ?)")
             result = statement.execute(event.channel.server.id.to_s,guild_id)
 
             event.send_message "Thank you Guardian! My commands are available via *!commands*."
+          else
+            event.send_message "Guardian, It looks like you gave me something other than your Destiny 2 guild ID. You can get your guild ID from the URL this page after it redirects: https://www.bungie.net/en/ClanV2/MyClan"
           end
         end
       end
