@@ -9,15 +9,15 @@ module Ghost
         end
       end
 
-      begin
-        tweets = $twitter.user_timeline("bungiehelp")
-        tweets.each do |tweet|
-          statement = $mysql.prepare("SELECT tweet_id FROM bungie_help WHERE tweet_id=?;")
-          result = statement.execute(tweet.id)
-          if result.entries.empty?
-            insert_statement = $mysql.prepare("INSERT INTO bungie_help (tweet_id,text,url) VALUES (?,?,?);")
-            insert_statement.execute(tweet.id, tweet.text, tweet.url.to_s)
-            @channels.each do |channel|
+      tweets = $twitter.user_timeline("bungiehelp")
+      tweets.each do |tweet|
+        statement = $mysql.prepare("SELECT tweet_id FROM bungie_help WHERE tweet_id=?;")
+        result = statement.execute(tweet.id)
+        if result.entries.empty?
+          insert_statement = $mysql.prepare("INSERT INTO bungie_help (tweet_id,text,url) VALUES (?,?,?);")
+          insert_statement.execute(tweet.id, tweet.text, tweet.url.to_s)
+          @channels.each do |channel|
+            begin
               $bot.channel(channel).send_embed do |embed|
                 embed.title = tweet.user.name + " (@#{tweet.user.screen_name})"
                 embed.description = tweet.text
@@ -27,20 +27,24 @@ module Ghost
                 embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
               end
               sleep 1
+            rescue Discordrb::Errors::NoPermission => e
+              puts "Error occured while posting news in #{bot.channel(channel).server.id}"
             end
           end
         end
+      end
 
-        url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
-        open(url) do |rss|
-          feed = RSS::Parser.parse(rss)
-          feed.items.each do |item|
-            statement = $mysql.prepare("SELECT guid FROM bungie_news WHERE guid=?;")
-            result = statement.execute(item.guid.content)
-            if result.entries.empty?
-              insert_statement = $mysql.prepare("INSERT INTO bungie_news (guid,title,link,description) VALUES (?,?,?,?);")
-              insert_statement.execute(item.guid.content, item.title, item.link, item.description)
-              @channels.each do |channel|
+      url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
+      open(url) do |rss|
+        feed = RSS::Parser.parse(rss)
+        feed.items.each do |item|
+          statement = $mysql.prepare("SELECT guid FROM bungie_news WHERE guid=?;")
+          result = statement.execute(item.guid.content)
+          if result.entries.empty?
+            insert_statement = $mysql.prepare("INSERT INTO bungie_news (guid,title,link,description) VALUES (?,?,?,?);")
+            insert_statement.execute(item.guid.content, item.title, item.link, item.description)
+            @channels.each do |channel|
+              begin
                 $bot.channel(channel).send_embed do |embed|
                   embed.title = item.title
                   embed.description = item.description
@@ -48,13 +52,13 @@ module Ghost
                   embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
                   embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
                 end
+              rescue Discordrb::Errors::NoPermission => e
+                puts "Error occured while posting news in #{bot.channel(channel).server.id}"
               end
             end
-            sleep 1
           end
+          sleep 1
         end
-      rescue Discordrb::Errors::NoPermission => e
-        puts "Error occured while posting news in #{bot.channel(channel).server.id}"
       end
     end
 
