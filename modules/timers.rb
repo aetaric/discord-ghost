@@ -9,48 +9,52 @@ module Ghost
         end
       end
 
-      tweets = $twitter.user_timeline("bungiehelp")
-      tweets.each do |tweet|
-        statement = $mysql.prepare("SELECT tweet_id FROM bungie_help WHERE tweet_id=?;")
-        result = statement.execute(tweet.id)
-        if result.entries.empty?
-          insert_statement = $mysql.prepare("INSERT INTO bungie_help (tweet_id,text,url) VALUES (?,?,?);")
-          insert_statement.execute(tweet.id, tweet.text, tweet.url.to_s)
-          @channels.each do |channel|
-            $bot.channel(channel).send_embed do |embed|
-              embed.title = tweet.user.name + " (@#{tweet.user.screen_name})"
-              embed.description = tweet.text
-              embed.url = tweet.url.to_s
-              embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: tweet.user.profile_image_url.to_s)
-              embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
-              embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+      begin
+        tweets = $twitter.user_timeline("bungiehelp")
+        tweets.each do |tweet|
+          statement = $mysql.prepare("SELECT tweet_id FROM bungie_help WHERE tweet_id=?;")
+          result = statement.execute(tweet.id)
+          if result.entries.empty?
+            insert_statement = $mysql.prepare("INSERT INTO bungie_help (tweet_id,text,url) VALUES (?,?,?);")
+            insert_statement.execute(tweet.id, tweet.text, tweet.url.to_s)
+            @channels.each do |channel|
+              $bot.channel(channel).send_embed do |embed|
+                embed.title = tweet.user.name + " (@#{tweet.user.screen_name})"
+                embed.description = tweet.text
+                embed.url = tweet.url.to_s
+                embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: tweet.user.profile_image_url.to_s)
+                embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+                embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+              end
+              sleep 1
+            end
+          end
+        end
+
+        url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
+        open(url) do |rss|
+          feed = RSS::Parser.parse(rss)
+          feed.items.each do |item|
+            statement = $mysql.prepare("SELECT guid FROM bungie_news WHERE guid=?;")
+            result = statement.execute(item.guid.content)
+            if result.entries.empty?
+              insert_statement = $mysql.prepare("INSERT INTO bungie_news (guid,title,link,description) VALUES (?,?,?,?);")
+              insert_statement.execute(item.guid.content, item.title, item.link, item.description)
+              @channels.each do |channel|
+                $bot.channel(channel).send_embed do |embed|
+                  embed.title = item.title
+                  embed.description = item.description
+                  embed.url = item.link
+                  embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+                  embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+                end
+              end
             end
             sleep 1
           end
         end
-      end
-
-      url = 'https://www.bungie.net/en-us/Rss/NewsByCategory'
-      open(url) do |rss|
-        feed = RSS::Parser.parse(rss)
-        feed.items.each do |item|
-          statement = $mysql.prepare("SELECT guid FROM bungie_news WHERE guid=?;")
-          result = statement.execute(item.guid.content)
-          if result.entries.empty?
-            insert_statement = $mysql.prepare("INSERT INTO bungie_news (guid,title,link,description) VALUES (?,?,?,?);")
-            insert_statement.execute(item.guid.content, item.title, item.link, item.description)
-            @channels.each do |channel|
-              $bot.channel(channel).send_embed do |embed|
-                embed.title = item.title
-                embed.description = item.description
-                embed.url = item.link
-                embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
-                embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
-              end
-            end
-          end
-          sleep 1
-        end
+      rescue Discordrb::Errors::NoPermission => e
+        puts "Error occured while posting news in #{bot.channel(channel).server.id}"
       end
     end
 
