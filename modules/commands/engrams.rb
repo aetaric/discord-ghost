@@ -1,6 +1,6 @@
 module Ghost
   module DiscordCommands
-    module Commands
+    module Engrams
       extend Discordrb::Commands::CommandContainer
 
       command(:engrams, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!', description: "Displays the clan engrams for your configured clan.") do |event|
