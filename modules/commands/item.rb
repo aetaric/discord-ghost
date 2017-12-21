@@ -14,9 +14,11 @@ module Ghost
           event.send_message "Guardian, I need 3 or more letters to search the archives."
           break
         end
-      
+ 
+        puts "!item command run with arguements - #{search_term.join(" ")} - on server #{event.channel.server.name} (#{event.channel.server.id})"
+
         item_hash = nil
-      
+        
         if search_term[(search_term.length - 1)] =~ /\A\d+\z/ ? true : false
           item_hash = search_term.pop
         end
