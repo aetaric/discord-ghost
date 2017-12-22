@@ -30,10 +30,21 @@ module Ghost
             when 330
               raid_type = "Leviathan Raid (Prestige)"
             else
-              raid_type = "I have no idea how this happened, but It's an unknown raid type."
+              raid_type = "I have no idea how this happened, but it's an unknown raid type."
             end
             
             embed.add_field(name: raid_type, value: order, inline: true)
+          end
+
+          challenges = json['Response']['3660836525']['availableQuests'][0]['challenges']
+          challenges.each do |challenge|
+            activity_hash = leviathan_raids[0]['activityHash'].to_s
+            if challenge['activityHash'].to_s == activity_hash
+              objective_lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyObjectiveDefinition/#{challenge['objectiveHash']}/"
+              if /Discover the hidden/.match(objective_lookup['Response']['displayProperties']['description'])
+                embed.add_field(name: "Challenge", value: objective_lookup['Response']['displayProperties']['name'], inline: false)
+              end
+            end
           end
         end
       end
