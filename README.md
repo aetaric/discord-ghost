@@ -13,3 +13,6 @@ https://discordapp.com/oauth2/authorize?client_id=375790373131386891&scope=bot&p
  * !nightfall - pulls the modifiers for the nightfall
  * !claninfo - Displays info about your clan (level and xp progress)
  * !item {search_term} - Searches for the requested item in the Destiny 2 API.
+ * !xur - Displays what Xur has for sale.
+ * !eververse - Displays what tess has for sale.
+ * !leviathan - Displays the raid rotation and challenge.
