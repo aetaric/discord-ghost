@@ -34,10 +34,16 @@ module Ghost
             embed.add_field(name: "Xur is away", value: "Xur will return in #{humanize(remaining_time.to_i)}", inline: true)
           end
         else
-          weapon  = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales['69']['itemHash']}/")['Response']['displayProperties']
-          hunter  = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales['79']['itemHash']}/")['Response']['displayProperties']
-          titan   = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales['89']['itemHash']}/")['Response']['displayProperties']
-          warlock = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales['102']['itemHash']}/")['Response']['displayProperties']
+          items = []
+          xur_sales.keys.each do |sale|
+            if xur_sales[sale]['itemHash'] != 759381183
+              if xur_sales[sale]['saleStatus'] == 2
+                item = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales[sale]['itemHash']}/")['Response']['displayProperties']
+                item_hash = {'name' => item['name'], 'description' => item['description']}
+                items.push item_hash 
+              end
+            end
+          end
 
           channel = event.channel
           channel.send_embed do |embed|
@@ -48,11 +54,10 @@ module Ghost
             embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
             embed.color = Discordrb::ColourRGB.new(0xceae33).combined
            
-            embed.add_field(name: "Time Remaining", value: "Xur leaves in #{humanize((remaining_time - 259200).to_i)}.")
-            embed.add_field(name: weapon['name'], value: weapon['description'], inline: true)
-            embed.add_field(name: hunter['name'], value: hunter['description'], inline: true)
-            embed.add_field(name: titan['name'], value: titan['description'], inline: true)
-            embed.add_field(name: warlock['name'], value: warlock['description'], inline: true)
+            embed.add_field(name: "Time Remaining", value: "Xur leaves in #{humanize((remaining_time - 259200).to_i)}.", inline: false)
+            items.each do |item|
+              embed.add_field(name: item['name'], value: item['description'], inline: true)
+            end
           end
         end
       end
