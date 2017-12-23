@@ -45,6 +45,16 @@ module Ghost
             end
           end
 
+          uri = URI.parse("http://whatsxurgot.com/weekly/data.json")
+          response = Net::HTTP.get_response(uri)
+          locations = JSON.load(response.body)['XurLocations']
+          xur_location = {}
+          locations.each do |location|
+            if location['currentLocation'] == true
+              xur_location = location
+            end
+          end
+
           channel = event.channel
           channel.send_embed do |embed|
             embed.title = xur_definition['name']
@@ -55,6 +65,7 @@ module Ghost
             embed.color = Discordrb::ColourRGB.new(0xceae33).combined
            
             embed.add_field(name: "Time Remaining", value: "Xur leaves in #{humanize((remaining_time - 259200).to_i)}.", inline: false)
+            embed.add_field(name: "Location", value: "#{xur_location['world']} // #{xur_location['region']}\n • #{xur_location['description']}"
             items.each do |item|
               embed.add_field(name: item['name'], value: item['description'], inline: true)
             end
