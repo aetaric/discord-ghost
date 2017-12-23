@@ -22,6 +22,7 @@ GEM
       eventmachine (>= 0.3.3)
       zscheduler (>= 0.0.3)
     hitimes (1.2.5)
+    htmlentities (4.3.4)
     http (3.0.0)
       addressable (~> 2.3)
       http-cookie (~> 1.0)
@@ -82,6 +83,7 @@ PLATFORMS
 DEPENDENCIES
   discordrb
   graphite-api
+  htmlentities
   mysql2
   rubyzip
   sqlite3

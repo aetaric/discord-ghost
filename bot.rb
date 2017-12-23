@@ -11,6 +11,7 @@ require 'open-uri'
 require 'twitter'
 require 'graphite-api'
 require 'graphite-api/core_ext/numeric'
+require 'htmlentities'
 
 # Load non-Discordrb modules
 Dir['modules/*.rb'].each { |mod| load mod }
