@@ -11,7 +11,7 @@ module Ghost
 
         if !query.first.nil?
           update_statement = $mysql.prepare("UPDATE users set discord_id=?, discord_discriminator=? where discord_link=?")
-          result = statement.execute(user.id,user.discriminator,link_code)
+          result = update_statement.execute(user.id,user.discriminator,link_code)
 
           user.pm "Guardian, Your accounts are now linked. User stats commands will now work for you."
         end
