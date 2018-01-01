@@ -13,30 +13,34 @@ module Ghost
         challenges = @lookup['Response']['challenges']
 
         channel = event.channel
-        channel.send_embed do |embed|
-          embed.title = @lookup['Response']['displayProperties']['name']
-          embed.description = @lookup['Response']['displayProperties']['description']
-          embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['pgcrImage'])
-          embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['displayProperties']['icon'])
-          embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
-          embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+        begin
+          channel.send_embed do |embed|
+            embed.title = @lookup['Response']['displayProperties']['name']
+            embed.description = @lookup['Response']['displayProperties']['description']
+            embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['pgcrImage'])
+            embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['displayProperties']['icon'])
+            embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+            embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
 
-          modifier_list = []
-          modifiers.each do |mod|
-            mod_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityModifierDefinition/#{mod.to_s}/"
-            mod_value = "• **#{mod_info['Response']['displayProperties']['name']}:** #{mod_info['Response']['displayProperties']['description']}"
-            modifier_list.push mod_value
+            modifier_list = []
+            modifiers.each do |mod|
+              mod_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityModifierDefinition/#{mod.to_s}/"
+              mod_value = "• **#{mod_info['Response']['displayProperties']['name']}:** #{mod_info['Response']['displayProperties']['description']}"
+              modifier_list.push mod_value
+            end
+
+            challenge_list = []
+            challenges.each do |challenge|
+              challenge_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyObjectiveDefinition/#{challenge['objectiveHash']}/"
+              challenge_value = "• **#{challenge_info['Response']['displayProperties']['name']}:** #{challenge_info['Response']['displayProperties']['description']}"
+              challenge_list.push challenge_value
+            end
+
+            embed.add_field(name: "Modifiers", value: modifier_list.join("\n"), inline: true)
+            embed.add_field(name: "Challenges", value: challenge_list.join("\n"), inline: true)
           end
-
-          challenge_list = []
-          challenges.each do |challenge|
-            challenge_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyObjectiveDefinition/#{challenge['objectiveHash']}/"
-            challenge_value = "• **#{challenge_info['Response']['displayProperties']['name']}:** #{challenge_info['Response']['displayProperties']['description']}"
-            challenge_list.push challenge_value
-          end
-
-          embed.add_field(name: "Modifiers", value: modifier_list.join("\n"), inline: true)
-          embed.add_field(name: "Challenges", value: challenge_list.join("\n"), inline: true)
+        rescue Discordrb::Errors::NoPermission => e
+          event.author.pm "Guardian, I don't have permission to speak in that channel. Please make sure I can send messages and embed links."
         end
       end
     end

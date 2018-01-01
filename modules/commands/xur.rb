@@ -56,19 +56,23 @@ module Ghost
           end
 
           channel = event.channel
-          channel.send_embed do |embed|
-            embed.title = xur_definition['name']
-            embed.description = xur_definition['description']
-            embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + xur_definition['icon'])
-            embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + xur_definition['largeIcon'])
-            embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
-            embed.color = Discordrb::ColourRGB.new(0xceae33).combined
-           
-            embed.add_field(name: "Time Remaining", value: "Xur leaves in #{humanize((remaining_time - 259200).to_i)}.", inline: false)
-            embed.add_field(name: "Location", value: "#{xur_location['world']} // #{HTMLEntities.new.decode xur_location['region']}\n • #{HTMLEntities.new.decode xur_location['description']}", inline: false)
-            items.each do |item|
-              embed.add_field(name: item['name'], value: item['description'], inline: true)
+          begin
+            channel.send_embed do |embed|
+              embed.title = xur_definition['name']
+              embed.description = xur_definition['description']
+              embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + xur_definition['icon'])
+              embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + xur_definition['largeIcon'])
+              embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+              embed.color = Discordrb::ColourRGB.new(0xceae33).combined
+             
+              embed.add_field(name: "Time Remaining", value: "Xur leaves in #{humanize((remaining_time - 259200).to_i)}.", inline: false)
+              embed.add_field(name: "Location", value: "#{xur_location['world']} // #{HTMLEntities.new.decode xur_location['region']}\n • #{HTMLEntities.new.decode xur_location['description']}", inline: false)
+              items.each do |item|
+                embed.add_field(name: item['name'], value: item['description'], inline: true)
+              end
             end
+          rescue Discordrb::Errors::NoPermission => e
+            event.author.pm "Guardian, I don't have permission to speak in that channel. Please make sure I can send messages and embed links."
           end
         end
       end

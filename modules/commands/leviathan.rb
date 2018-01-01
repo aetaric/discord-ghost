@@ -12,40 +12,44 @@ module Ghost
         @lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityDefinition/#{leviathan_raids[0]['activityHash']}/"
 
         channel = event.channel
-        channel.send_embed do |embed|
-          embed.title = @lookup['Response']['displayProperties']['name']
-          embed.description = @lookup['Response']['displayProperties']['description']
-          embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['pgcrImage'])
-          embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['displayProperties']['icon'])
-          embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
-          embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
+        begin
+          channel.send_embed do |embed|
+            embed.title = @lookup['Response']['displayProperties']['name']
+            embed.description = @lookup['Response']['displayProperties']['description']
+            embed.image = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['pgcrImage'])
+            embed.thumbnail = Discordrb::Webhooks::EmbedImage.new(url: $base_url + @lookup['Response']['displayProperties']['icon'])
+            embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
+            embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
 
-          leviathan_raids.each do |raid|
-            hash = raid['activityHash'].to_s
-            order = raid_hash_map[hash]['order']
+            leviathan_raids.each do |raid|
+              hash = raid['activityHash'].to_s
+              order = raid_hash_map[hash]['order']
 
-            case raid_hash_map[hash]['power']
-            when 300
-              raid_type = "Leviathan Raid"
-            when 330
-              raid_type = "Leviathan Raid (Prestige)"
-            else
-              raid_type = "I have no idea how this happened, but it's an unknown raid type."
+              case raid_hash_map[hash]['power']
+              when 300
+                raid_type = "Leviathan Raid"
+              when 330
+                raid_type = "Leviathan Raid (Prestige)"
+              else
+                raid_type = "I have no idea how this happened, but it's an unknown raid type."
+              end
+              
+              embed.add_field(name: raid_type, value: order, inline: true)
             end
-            
-            embed.add_field(name: raid_type, value: order, inline: true)
-          end
 
-          challenges = json['Response']['3660836525']['availableQuests'][0]['challenges']
-          challenges.each do |challenge|
-            activity_hash = leviathan_raids[0]['activityHash'].to_s
-            if challenge['activityHash'].to_s == activity_hash
-              objective_lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyObjectiveDefinition/#{challenge['objectiveHash']}/"
-              if /Discover the hidden/.match(objective_lookup['Response']['displayProperties']['description'])
-                embed.add_field(name: "Challenge", value: objective_lookup['Response']['displayProperties']['name'], inline: false)
+            challenges = json['Response']['3660836525']['availableQuests'][0]['challenges']
+            challenges.each do |challenge|
+              activity_hash = leviathan_raids[0]['activityHash'].to_s
+              if challenge['activityHash'].to_s == activity_hash
+                objective_lookup = bungie_api_request "/Platform/Destiny2/Manifest/DestinyObjectiveDefinition/#{challenge['objectiveHash']}/"
+                if /Discover the hidden/.match(objective_lookup['Response']['displayProperties']['description'])
+                  embed.add_field(name: "Challenge", value: objective_lookup['Response']['displayProperties']['name'], inline: false)
+                end
               end
             end
           end
+        rescue Discordrb::Errors::NoPermission => e
+          event.author.pm "Guardian, I don't have permission to speak in that channel. Please make sure I can send messages and embed links."
         end
       end
     end
