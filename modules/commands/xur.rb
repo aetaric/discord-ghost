@@ -37,7 +37,7 @@ module Ghost
           items = []
           xur_sales.keys.each do |sale|
             if xur_sales[sale]['itemHash'] != 759381183
-              if xur_sales[sale]['saleStatus'] == 2
+              if xur_sales[sale]['saleStatus'] == 0
                 item = bungie_api_request("/Platform/Destiny2/Manifest/DestinyInventoryItemDefinition/#{xur_sales[sale]['itemHash']}/")['Response']['displayProperties']
                 item_hash = {'name' => item['name'], 'description' => item['description']}
                 items.push item_hash 
