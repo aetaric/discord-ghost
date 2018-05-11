@@ -15,15 +15,15 @@ module Ghost
           vendor_request = bungie_authenticated_api_request "/Platform/Destiny2/#{resolved_data['membershipType']}/Profile/#{resolved_data['membershipId']}/Character/#{character}/Vendors/?components=400,401,402"
         rescue NoMethodError => e
           if membership_data['ErrorStatus'] != "Success"
-            channel.send_message "Error getting data from Bungie: #{membership_data['Message']}"
+            event.channel.send_message "Error getting data from Bungie: #{membership_data['Message']}"
           elsif resolved_data['ErrorStatus'] != "Success"
-            channel.send_message "Error getting data from Bungie: #{resolved_data['Message']}"
+            event.channel.send_message "Error getting data from Bungie: #{resolved_data['Message']}"
           elsif profile['ErrorStatus'] != "Success"
-            channel.send_message "Error getting data from Bungie: #{profile['Message']}"
+            event.channel.send_message "Error getting data from Bungie: #{profile['Message']}"
           elsif character['ErrorStatus'] != "Success"
-            channel.send_message "Error getting data from Bungie: #{character['Message']}"
+            event.channel.send_message "Error getting data from Bungie: #{character['Message']}"
           elsif vendor_request['ErrorStatus'] != "Success"
-            channel.send_message "Error getting data from Bungie: #{vendor_request['Message']}"
+            event.channel.send_message "Error getting data from Bungie: #{vendor_request['Message']}"
           end
         end
         
