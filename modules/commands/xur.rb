@@ -6,13 +6,27 @@ module Ghost
       command(:xur, bucket: :D2, rate_limit_message: 'Calm down for %time% more seconds!', description: "Displays the items Xur has for sale. If he's not around. Displays the time he will be back.") do |event|
         result = $mysql.query('SELECT membership_id FROM oauth where deleted != 1 LIMIT 1')
         oauth = result.first
-
-        membership_data = bungie_api_request "/Platform/User/GetMembershipsById/#{oauth['membership_id']}/-1/"
-        resolved_data = membership_data['Response']['destinyMemberships'][0]
-        profile = bungie_api_request "/Platform/Destiny2/#{resolved_data['membershipType']}/Profile/#{resolved_data['membershipId']}/?components=200"
-        character = profile['Response']['characters']['data'].keys[0]
-        vendor_request = bungie_authenticated_api_request "/Platform/Destiny2/#{resolved_data['membershipType']}/Profile/#{resolved_data['membershipId']}/Character/#{character}/Vendors/?components=400,401,402"
-
+        
+        begin
+          membership_data = bungie_api_request "/Platform/User/GetMembershipsById/#{oauth['membership_id']}/-1/"
+          resolved_data = membership_data['Response']['destinyMemberships'][0]
+          profile = bungie_api_request "/Platform/Destiny2/#{resolved_data['membershipType']}/Profile/#{resolved_data['membershipId']}/?components=200"
+          character = profile['Response']['characters']['data'].keys[0]
+          vendor_request = bungie_authenticated_api_request "/Platform/Destiny2/#{resolved_data['membershipType']}/Profile/#{resolved_data['membershipId']}/Character/#{character}/Vendors/?components=400,401,402"
+        rescue NoMethodError => e
+          if membership_data['ErrorStatus'] != "Success"
+            channel.send_message "Error getting data from Bungie: #{membership_data['Message']}"
+          elsif resolved_data['ErrorStatus'] != "Success"
+            channel.send_message "Error getting data from Bungie: #{resolved_data['Message']}"
+          elsif profile['ErrorStatus'] != "Success"
+            channel.send_message "Error getting data from Bungie: #{profile['Message']}"
+          elsif character['ErrorStatus'] != "Success"
+            channel.send_message "Error getting data from Bungie: #{character['Message']}"
+          elsif vendor_request['ErrorStatus'] != "Success"
+            channel.send_message "Error getting data from Bungie: #{vendor_request['Message']}"
+          end
+        end
+        
         xur_data = vendor_request['Response']['vendors']['data']['2190858386']
         xur_sales = vendor_request['Response']['sales']['data']['2190858386']['saleItems']
         xur_definition = bungie_api_request("/Platform/Destiny2/Manifest/DestinyVendorDefinition/2190858386/")['Response']['displayProperties']
