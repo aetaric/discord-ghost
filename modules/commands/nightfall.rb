@@ -22,12 +22,12 @@ module Ghost
             embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
             embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
 
-            modifier_list = []
-            modifiers.each do |mod|
-              mod_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityModifierDefinition/#{mod.to_s}/"
-              mod_value = "• **#{mod_info['Response']['displayProperties']['name']}:** #{mod_info['Response']['displayProperties']['description']}"
-              modifier_list.push mod_value
-            end
+#            modifier_list = []
+#            modifiers.each do |mod|
+#              mod_info = bungie_api_request "/Platform/Destiny2/Manifest/DestinyActivityModifierDefinition/#{mod.to_s}/"
+#              mod_value = "• **#{mod_info['Response']['displayProperties']['name']}:** #{mod_info['Response']['displayProperties']['description']}"
+#              modifier_list.push mod_value
+#            end
 
             challenge_list = []
             challenges.each do |challenge|
@@ -36,7 +36,7 @@ module Ghost
               challenge_list.push challenge_value
             end
 
-            embed.add_field(name: "Modifiers", value: modifier_list.join("\n"), inline: true)
+#            embed.add_field(name: "Modifiers", value: modifier_list.join("\n"), inline: true)
             embed.add_field(name: "Challenges", value: challenge_list.join("\n"), inline: true)
           end
         rescue Discordrb::Errors::NoPermission => e

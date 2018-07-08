@@ -12,7 +12,7 @@ module Ghost
             embed.description = "A discord bot for Destiny 2 clans"
             embed.footer = Discordrb::Webhooks::EmbedFooter.new(text: Ghost::Helpers.quotes, icon_url: "https://ghost.sysad.ninja/Ghost.png")
             embed.color = Discordrb::ColourRGB.new(0x00ff00).combined
-            embed.add_field(name: "Author", value: "@aetaric#1427", inline: true)
+            embed.add_field(name: "Author", value: "@aetaric#0001", inline: true)
             embed.add_field(name: "Servers", value: $bot.servers.count, inline: true)
             embed.add_field(name: "Shard", value: shard_value, inline: true)
             embed.add_field(name: "Uptime", value: humanize(seconds), inline: true)

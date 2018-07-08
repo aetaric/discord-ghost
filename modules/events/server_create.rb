@@ -13,10 +13,10 @@ module Ghost
         event.server.channels.each do |channel|
           if bot_member.permission?(:send_messages, channel)
             if channel.type.to_s == "0"
-              channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!\n
-I require only a few moments of your time to complete this important step.\n
-Please take a moment to run the !configure *guild id* command in a text channel on your server.\n
-*Example:* !configure 123456"
+#              channel.send_message "Thanks for adding me Guardian, but I won't function until I am configured!\n
+#I require only a few moments of your time to complete this important step.\n
+#Please take a moment to run the !configure *guild id* command in a text channel on your server.\n
+#*Example:* !configure 123456"
               break
             end
           else
